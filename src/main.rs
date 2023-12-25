@@ -1,4 +1,3 @@
-use prettytable::{format, row, Cell, Row, Table};
 use std::io;
 
 mod file_info;
@@ -22,31 +21,33 @@ fn main() -> io::Result<()> {
         }
     }
 
-    let mut file_info_list = file_info::get_file_info(show_hidden, sort_by_size, sort_by_time)?;
+    let mut file_info_list = file_info::get_file_info(show_hidden, false, false)?; // Initially unsorted
 
-    // Sort file_info_list to display directories first, then files
-    file_info_list.sort_by(|a, b| {
-        let a_is_directory = matches!(a.file_type, file_info::FileInfoType::Directory);
-        let b_is_directory = matches!(b.file_type, file_info::FileInfoType::Directory);
+    if sort_by_size {
+        file_info_list.sort_by(|a, b| b.size.cmp(&a.size));
+    } else if sort_by_time {
+        file_info_list.sort_by(|a, b| a.modified_time.cmp(&b.modified_time));
+    } else {
+        file_info_list.sort_by(|a, b| {
+            let a_is_directory = matches!(a.file_type, file_info::FileInfoType::Directory);
+            let b_is_directory = matches!(b.file_type, file_info::FileInfoType::Directory);
 
-        if a_is_directory && !b_is_directory {
-            return std::cmp::Ordering::Less;
-        } else if !a_is_directory && b_is_directory {
-            return std::cmp::Ordering::Greater;
-        }
-        std::cmp::Ordering::Equal
-    });
+            if a_is_directory && !b_is_directory {
+                return std::cmp::Ordering::Less;
+            } else if !a_is_directory && b_is_directory {
+                return std::cmp::Ordering::Greater;
+            }
+            std::cmp::Ordering::Equal
+        });
+    }
 
-    let mut table = Table::new();
-    table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
+    println!(
+        "{:<14} {:<17} {:<20}",
+        "Name", "Size (bytes)", "Last Modified"
+    );
+    println!("----------------------------------------------------");
 
-    table.add_row(row![
-        "\x1b[1m\x1b[4mName\x1b[0m",
-        "\x1b[1m\x1b[4mSize (bytes)\x1b[0m",
-        "\x1b[1m\x1b[4mLast Modified\x1b[0m"
-    ]);
-
-    for file_info in file_info_list {
+    for file_info in &file_info_list {
         let file_type = match file_info.file_type {
             file_info::FileInfoType::Directory => {
                 format!("\x1b[1;34m{}\x1b[0m", file_info.name) // Light blue and bold for directories
@@ -54,23 +55,20 @@ fn main() -> io::Result<()> {
             file_info::FileInfoType::File => {
                 format!("\x1b[4;31m{}\x1b[0m", file_info.name) // Light red and underlined for files
             }
-            file_info::FileInfoType::Symlink => file_info.name,
+            file_info::FileInfoType::Symlink => format!("{}", file_info.name),
             // Handle other types as needed
         };
 
-        table.add_row(Row::new(vec![
-            Cell::new(&file_type),
-            Cell::new(&file_info.size.to_string()),
-            Cell::new(
-                &file_info
-                    .modified_time
-                    .format("%Y-%m-%d %H:%M:%S")
-                    .to_string(),
-            ),
-        ]));
+        println!(
+            "{:<25} {:<17} {:<20}",
+            file_type,
+            file_info.size,
+            file_info
+                .modified_time
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string()
+        );
     }
-
-    table.printstd();
 
     Ok(())
 }
