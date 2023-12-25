@@ -4,6 +4,7 @@ pub struct Flag {
     pub takes: Input,
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub enum Input {
     Invalid,
