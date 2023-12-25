@@ -1,8 +1,6 @@
 # Roxo
 
-roxo is designed to replace commands such as _ls_ as _dir_
-
-**roxo** aims to act as a better version of file-listing programs such as `ls` and `dir`.
+[roxo][https://www.github.com/kawaleo/roxo] is designed to replace commands such as _ls_ as _dir_
 
 ## Installation
 
