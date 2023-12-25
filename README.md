@@ -35,4 +35,10 @@ roxo gives a variety of options, including ways to sort how files are listed
 - **-s**, **--size**: sort by size
 - **-t**, **--time**: sort by time of last modification
 
+## Todo
+
+- [x] Compatability with all operating systems
+- [ ] config.toml file
+- [ ] Add support for really long file/folder names
+
 ## More info here eventually.
