@@ -1,6 +1,6 @@
 # Roxo
 
-[roxo][https://www.github.com/kawaleo/roxo] is designed to replace commands such as _ls_ as _dir_
+[roxo](https://www.github.com/kawaleo/roxo) is designed to replace commands such as _ls_ as _dir_
 
 ## Installation
 
@@ -12,7 +12,7 @@ If you are unsure if `rust` is installed on your system, run
 cargo
 ```
 
-You should see a list of commands, and if not, `rust` can be found [here][https://www.rust-lang.org]
+You should see a list of commands, and if not, `rust` can be found [here](https://www.rust-lang.org)
 
 To continue with installation, go into the cloned repo and run
 
