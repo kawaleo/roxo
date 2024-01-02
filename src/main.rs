@@ -3,10 +3,11 @@ use std::io;
 use std::process;
 
 mod output;
-mod settings;
 
 fn main() -> io::Result<()> {
     let args: Vec<String> = std::env::args().collect();
+
+    let size_debug = true;
 
     let mut show_hidden = false;
     let mut sort_by_size = false;
@@ -25,20 +26,27 @@ fn main() -> io::Result<()> {
                 "-h" | "--hide" => hide_icons = true,
 
                 _ => {
-                    println!("\x1b[1;91[Invalid Argument]\x1b[0m\n{}\nFor a list of valid arguments, use \x1b[1mroxo -h\x1b[0m or \x1b[1mroxo --help\x1b[0m", arg);
+                    println!("\x1b[1;91m[Invalid Argument]\x1b[0m\n{}\nFor a list of valid arguments, use \x1b[1mroxo -h\x1b[0m or \x1b[1mroxo --help\x1b[0m", arg);
                 }
             }
         }
     }
 
     if sort_by_time && sort_by_size {
-        println!("\x1b[1;91m[Error: Incompatable Arguments]\x1b[0m\n\x1b[1mYou can not sort by time and size at the same time (-s & -t)\x1b[0m\nFor a list of valid arguments, use \x1b[1mroxo -h\x1b[0m or \x1b[1mroxo --help\x1b[0m",);
+        println!("\x1b[1;91m[Error: Incompatible Arguments]\x1b[0m\n\x1b[1mYou cannot sort by time and size at the same time (-s & -t)\x1b[0m\nFor a list of valid arguments, use \x1b[1mroxo -h\x1b[0m or \x1b[1mroxo --help\x1b[0m");
         process::exit(1);
     }
-    let mut file_info_list = info::get_file_info(show_hidden, false, false)?; // Initially unsorted
+
+    let mut file_info_list = info::get_file_info(show_hidden, false, false)?;
+
+    // Calculate directory size if sorting by size is required
 
     if sort_by_size {
-        file_info_list.sort_by(|a, b| b.size.cmp(&a.size));
+        file_info_list.sort_by(|a, b| {
+            b.size
+                .partial_cmp(&a.size)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
     } else if sort_by_time {
         file_info_list.sort_by(|a, b| a.modified_time.cmp(&b.modified_time));
     } else {
@@ -55,17 +63,18 @@ fn main() -> io::Result<()> {
         });
     }
 
-    /*
-    println!(
-        "\x1b[1m{:<20}\x1b[0m \x1b[1m{:<17}\x1b[0m \x1b[1m{:<14}\x1b[0m",
-        "Last Modified", "Size (bytes)", "Name"
-    );
-    println!("----------------------------------------------------");
-    */
-    println!(
-        "\x1b[1m{:<20}\x1b[0m \x1b[1m{:<14}\x1b[0m",
-        "Last Modified", "Name"
-    );
+    if size_debug {
+        println!(
+            "\x1b[1m{:<20}\x1b[0m \x1b[1m{:<10}\x1b[0m \x1b[1m{:<14}\x1b[0m",
+            "Last Modified", "Size", "Name"
+        );
+        println!("----------------------------------------------------");
+    } else {
+        println!(
+            "\x1b[1m{:<20}\x1b[0m \x1b[1m{:<14}\x1b[0m",
+            "Last Modified", "Name"
+        );
+    }
 
     for file_info in &file_info_list {
         let file_type = match file_info.file_type {
@@ -86,27 +95,45 @@ fn main() -> io::Result<()> {
             info::FileInfoType::Symlink => format!("{}", file_info.name),
         };
 
-        /*
-        println!(
-            "{:<20} {:<17} {:<25}",
-            file_info
-                .modified_time
-                .format("%Y-%m-%d %H:%M:%S")
-                .to_string(),
-            file_info.size,
-            file_type,
-        );
-        */
+        let formatted_size = format_file_size(file_info.size);
 
-        println!(
-            "{:<20} {:<25}",
-            file_info
-                .modified_time
-                .format("%Y-%m-%d %H:%M:%S")
-                .to_string(),
-            file_type,
-        );
+        if size_debug {
+            println!(
+                "{:<20} {:<10} {:<25}",
+                file_info
+                    .modified_time
+                    .format("%Y-%m-%d %H:%M:%S")
+                    .to_string(),
+                formatted_size,
+                file_type,
+            );
+        } else {
+            println!(
+                "{:<20} {:<25}",
+                file_info
+                    .modified_time
+                    .format("%Y-%m-%d %H:%M:%S")
+                    .to_string(),
+                file_type,
+            );
+        }
     }
 
     Ok(())
+}
+fn format_file_size(size: u64) -> String {
+    let units = ["b", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+    let mut index = 0;
+    let mut size = size as f64; // Convert to f64 for decimal precision
+
+    while size >= 1024.0 && index < units.len() - 1 {
+        size /= 1024.0;
+        index += 1;
+    }
+
+    if size >= 10.0 || size.fract() == 0.0 {
+        format!("{:.0}{}", size, units[index])
+    } else {
+        format!("{:.1}{}", size, units[index])
+    }
 }
