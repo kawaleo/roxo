@@ -1,5 +1,4 @@
 use output::info;
-use settings::flags;
 use std::io;
 use std::process;
 
@@ -16,38 +15,18 @@ fn main() -> io::Result<()> {
 
     if args.len() > 1 {
         for arg in args.iter().skip(1) {
-            let mut flag_matched = false;
-            for flag in flags::get_flags() {
-                if flag.flag.contains(&arg.as_str()) {
-                    flag_matched = true;
-                    // Process the flag based on its input type (takes)
-                    match flag.takes {
-                        settings::flags::Input::Invalid => {
-                            // Handle the flag that takes no additional input
-                            match arg.as_str() {
-                                "-a" | "--all" => show_hidden = true,
+            match arg.as_str() {
+                "-a" | "--all" => show_hidden = true,
 
-                                "-s" | "--size" => sort_by_size = true,
+                "-s" | "--size" => sort_by_size = true,
 
-                                "-t" | "--time" => sort_by_time = true,
+                "-t" | "--time" => sort_by_time = true,
 
-                                "-h" | "--hide" => hide_icons = true,
+                "-h" | "--hide" => hide_icons = true,
 
-                                _ => {
-                                    println!("\x1b[1;91[Invalid Argument]\x1b[0m\n{}\nFor a list of valid arguments, use \x1b[1mroxo -h\x1b[0m or \x1b[1mroxo --help\x1b[0m", arg);
-                                }
-                            }
-                        }
-                        settings::flags::Input::Required(_) => {}
-                        settings::flags::Input::Optional(_) => match arg.as_str() {
-                            _ => println!("Unknown option: {}", arg),
-                        },
-                    }
+                _ => {
+                    println!("\x1b[1;91[Invalid Argument]\x1b[0m\n{}\nFor a list of valid arguments, use \x1b[1mroxo -h\x1b[0m or \x1b[1mroxo --help\x1b[0m", arg);
                 }
-            }
-            if !flag_matched {
-                println!("\x1b[1;91m[Error: Invalid Argument]\x1b[0m\n\x1b[1m\"{}\"\x1b[0m is not a valid flag\nFor a list of valid arguments, use \x1b[1mroxo -h\x1b[0m or \x1b[1mroxo --help\x1b[0m",arg);
-                process::exit(1);
             }
         }
     }
@@ -76,11 +55,17 @@ fn main() -> io::Result<()> {
         });
     }
 
+    /*
     println!(
-        "\x1b[1m{:<14}\x1b[0m \x1b[1m{:<17}\x1b[0m \x1b[1m{:<20}\x1b[0m",
-        "Name", "Size (bytes)", "Last Modified"
+        "\x1b[1m{:<20}\x1b[0m \x1b[1m{:<17}\x1b[0m \x1b[1m{:<14}\x1b[0m",
+        "Last Modified", "Size (bytes)", "Name"
     );
     println!("----------------------------------------------------");
+    */
+    println!(
+        "\x1b[1m{:<20}\x1b[0m \x1b[1m{:<14}\x1b[0m",
+        "Last Modified", "Name"
+    );
 
     for file_info in &file_info_list {
         let file_type = match file_info.file_type {
@@ -101,14 +86,25 @@ fn main() -> io::Result<()> {
             info::FileInfoType::Symlink => format!("{}", file_info.name),
         };
 
+        /*
         println!(
-            "{:<25} {:<17} {:<20}",
-            file_type,
-            file_info.size,
+            "{:<20} {:<17} {:<25}",
             file_info
                 .modified_time
                 .format("%Y-%m-%d %H:%M:%S")
-                .to_string()
+                .to_string(),
+            file_info.size,
+            file_type,
+        );
+        */
+
+        println!(
+            "{:<20} {:<25}",
+            file_info
+                .modified_time
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string(),
+            file_type,
         );
     }
 
